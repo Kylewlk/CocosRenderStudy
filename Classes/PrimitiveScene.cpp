@@ -22,69 +22,104 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "CustomScene.h"
+#include "PrimitiveScene.h"
 
 USING_NS_CC;
 
-const float SIZE_X = 240;
-const float SIZE_Y = 240;
+const float SIZE_X = 200;
+const float SIZE_Y = 200;
 
 
-CustomNode::CustomNode()
+PrimitiveNode::PrimitiveNode()
 	:_color(1.0, 0.0, 0.0, 1.0)
 {
 	_vertShader = ccPositionTextureColor_vert;
 	_fragShader = "uniform vec4 Color;  void main(void) { gl_FragColor = Color; }";
 }
 
-CustomNode::~CustomNode()
+PrimitiveNode::~PrimitiveNode()
 {
-
+	CC_SAFE_RELEASE(_primitive);
 }
 
 
-bool CustomNode::init()
+bool PrimitiveNode::init()
 {
 	if (!Node::init())
 	{
 		return false;
 	}
+	setContentSize(Size(SIZE_X, SIZE_Y));
+	setAnchorPoint(Vec2(0.5f, 0.5f));
+
+
+
+	V3F_C4B_T2F data[] = {
+		{ { 0,    0,0 },{ 255,  0,  0,255 },{ 0,1 } },
+		{ { 200,  0,0 },{ 0,  255,255,255 },{ 1,1 } },
+		{ { 200,200,0 },{ 255,255,  0,255 },{ 1,0 } },
+		{ { 0,  200,0 },{ 255,255,255,255 },{ 0,0 } },
+	};
+
+	uint16_t indices[] = {
+		0,1,2,
+		2,0,3
+	};
+
+	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0]);
+	static const int TOTAL_INDICES = TOTAL_VERTS * 6 / 4;
+
+	auto vertexBuffer = VertexBuffer::create(sizeof(V3F_C4B_T2F), TOTAL_VERTS);
+	vertexBuffer->updateVertices(data, TOTAL_VERTS, 0);
+
+	auto vertsData = VertexData::create();
+	vertsData->setStream(vertexBuffer, VertexStreamAttribute(0, GLProgram::VERTEX_ATTRIB_POSITION, GL_FLOAT, 3));
+	vertsData->setStream(vertexBuffer, VertexStreamAttribute(offsetof(V3F_C4B_T2F, colors), GLProgram::VERTEX_ATTRIB_COLOR, GL_UNSIGNED_BYTE, 4, true));
+	vertsData->setStream(vertexBuffer, VertexStreamAttribute(offsetof(V3F_C4B_T2F, texCoords), GLProgram::VERTEX_ATTRIB_TEX_COORD, GL_FLOAT, 2));
+
+
+	auto indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_SHORT_16, TOTAL_INDICES);
+	indexBuffer->updateIndices(indices, TOTAL_INDICES, 0);
+
+	_primitive = Primitive::create(vertsData, indexBuffer, GL_TRIANGLES);
+	_primitive->setCount(TOTAL_INDICES);
+	_primitive->setStart(0);
+
+
+
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
 	setGLProgramState(glprogramstate);
-	setContentSize(Size(SIZE_X, SIZE_Y));
-	setAnchorPoint(Vec2(0.5f, 0.5f));
 	return true;
 }
 
-void CustomNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void PrimitiveNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
-	_customCommand.init(_globalZOrder, transform, flags);
-	_customCommand.func = CC_CALLBACK_0(CustomNode::onDraw, this, transform, flags);
+
+	auto glProgramState = getGLProgramState();
+	glProgramState->setUniformVec4("Color", _color);
+	//glProgramState->setVertexAttribPointer("a_position", 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+	_customCommand.init(_globalZOrder,
+		0,
+		glProgramState,
+		BlendFunc::ALPHA_NON_PREMULTIPLIED,
+		_primitive,
+		transform,
+		flags);
+
 	renderer->addCommand(&_customCommand);
 
 }
 
-void CustomNode::onDraw(const cocos2d::Mat4& transform, uint32_t flags)
+
+
+
+Scene* PrimitiveScene::createScene()
 {
-	float w = SIZE_X, h = SIZE_Y;
-	GLfloat vertices[12] = { 0,0, w,0, w,h, 0,0, 0,h, w,h };
-
-	auto glProgramState = getGLProgramState();
-	glProgramState->setUniformVec4("Color", _color);
-	glProgramState->setVertexAttribPointer("a_position", 2, GL_FLOAT, GL_FALSE, 0, vertices);
-	glProgramState->apply(transform);
-
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	CC_INCREMENT_GL_DRAWN_BATCHES_AND_VERTICES(1, 3);
-}
-
-
-Scene* CustomScene::createScene()
-{
-    return CustomScene::create();
+    return PrimitiveScene::create();
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -95,7 +130,7 @@ static void problemLoading(const char* filename)
 }
 
 // on "init" you need to initialize your instance
-bool CustomScene::init()
+bool PrimitiveScene::init()
 {
     //////////////////////////////
     // 1. super init first
@@ -115,7 +150,7 @@ bool CustomScene::init()
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
-                                           CC_CALLBACK_1(CustomScene::menuCloseCallback, this));
+                                           CC_CALLBACK_1(PrimitiveScene::menuCloseCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -140,31 +175,17 @@ bool CustomScene::init()
 
     // add a label shows "Hello World"
     // create and initialize a label
-	auto node = CustomNode::create();
+	auto node = PrimitiveNode::create();
 	//node->setPosition(visibleSize / 2);
 	this->addChild(node);
 	node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
 
 
-
-	auto c2 = Camera::create();
-	c2->initDefault();
-	c2->setCameraFlag(CameraFlag::USER1);
-	c2->setPosition(0, 0);
-	addChild(c2);
-
-	auto n2 = CustomNode::create();
-	this->addChild(n2);
-	n2->setPosition(Vec2(n2->getContentSize().width, 0));
-
-	n2->setColor(Vec4(1.0, 1.0, 0.0, 1.0));
-	n2->setCameraMask((uint32_t)CameraFlag::USER1);
-
     return true;
 }
 
 
-void CustomScene::menuCloseCallback(Ref* pSender)
+void PrimitiveScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
     Director::getInstance()->end();

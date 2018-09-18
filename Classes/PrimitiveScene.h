@@ -22,15 +22,15 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __COMMAND_SCENE_H__
-#define __COMMAND_SCENE_H__
+#ifndef __PrimitiveScene_SCENE_H__
+#define __PrimitiveScene_SCENE_H__
 
 #include "cocos2d.h"
 
-class CustomNode : public cocos2d::Node
+class PrimitiveNode : public cocos2d::Node
 {
 public:
-    CREATE_FUNC(CustomNode);
+    CREATE_FUNC(PrimitiveNode);
 
 	virtual bool init();
 
@@ -39,22 +39,22 @@ public:
 	void setColor(cocos2d::Vec4 &color) { this->_color = color; }
 
 protected:
-	CustomNode();
-	~CustomNode();
-
-	void onDraw(const cocos2d::Mat4& transform, uint32_t flags);
+	PrimitiveNode();
+	~PrimitiveNode();
 
 	std::string _vertShader;
 	std::string _fragShader;
-	cocos2d::CustomCommand _customCommand;
 	cocos2d::Vec4 _color;
+
+	cocos2d::Primitive* _primitive;
+	cocos2d::PrimitiveCommand _customCommand;
 private:
 
 };
 
 
 
-class CustomScene : public cocos2d::Scene
+class PrimitiveScene : public cocos2d::Scene
 {
 public:
     static cocos2d::Scene* createScene();
@@ -65,7 +65,7 @@ public:
     void menuCloseCallback(cocos2d::Ref* pSender);
     
     // implement the "static create()" method manually
-    CREATE_FUNC(CustomScene);
+    CREATE_FUNC(PrimitiveScene);
 };
 
 #endif // __HELLOWORLD_SCENE_H__
