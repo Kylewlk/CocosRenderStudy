@@ -36,7 +36,7 @@ public:
 
 	virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
 
-	void setColor(cocos2d::Vec4 &color) { this->_color = color; }
+	void setTexture(cocos2d::Texture2D* texture);
 
 protected:
 	PrimitiveNode();
@@ -44,10 +44,10 @@ protected:
 
 	std::string _vertShader;
 	std::string _fragShader;
-	cocos2d::Vec4 _color;
+	cocos2d::Texture2D* _texture;
 
 	cocos2d::Primitive* _primitive;
-	cocos2d::PrimitiveCommand _customCommand;
+	cocos2d::PrimitiveCommand _primitiveCommand;
 private:
 
 };

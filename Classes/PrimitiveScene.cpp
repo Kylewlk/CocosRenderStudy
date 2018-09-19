@@ -30,11 +30,37 @@ const float SIZE_X = 200;
 const float SIZE_Y = 200;
 
 
+const char* ccPositionTextureColor_frag2 = R"(
+
+uniform int HasTex;  
+
+#ifdef GL_ES
+precision lowp float;
+#endif
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main()
+{
+	if( HasTex != 0 )
+	{
+		vec4 tc = texture2D(CC_Texture0, v_texCoord);	
+		gl_FragColor = mix (v_fragmentColor , tc, tc.w);
+	}
+	else
+	{
+		gl_FragColor = v_fragmentColor;
+	}
+}
+)";
+
 PrimitiveNode::PrimitiveNode()
-	:_color(1.0, 0.0, 0.0, 1.0)
+	:_texture(0)
 {
 	_vertShader = ccPositionTextureColor_vert;
 	_fragShader = "uniform vec4 Color;  void main(void) { gl_FragColor = Color; }";
+	_fragShader = ccPositionTextureColor_frag2;
 }
 
 PrimitiveNode::~PrimitiveNode()
@@ -42,6 +68,11 @@ PrimitiveNode::~PrimitiveNode()
 	CC_SAFE_RELEASE(_primitive);
 }
 
+void PrimitiveNode::setTexture(cocos2d::Texture2D * texture)
+{
+	_texture = texture;
+	_texture->retain();
+}
 
 bool PrimitiveNode::init()
 {
@@ -84,7 +115,7 @@ bool PrimitiveNode::init()
 	_primitive = Primitive::create(vertsData, indexBuffer, GL_TRIANGLES);
 	_primitive->setCount(TOTAL_INDICES);
 	_primitive->setStart(0);
-
+	_primitive->retain();
 
 
 
@@ -98,19 +129,19 @@ void PrimitiveNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& trans
 {
 
 	auto glProgramState = getGLProgramState();
-	glProgramState->setUniformVec4("Color", _color);
+	glProgramState->setUniformInt("HasTex", _texture!=nullptr);
 	//glProgramState->setVertexAttribPointer("a_position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-
-	_customCommand.init(_globalZOrder,
-		0,
+	GLuint tex = (_texture == nullptr) ? 0 : _texture->getName();
+	_primitiveCommand.init(_globalZOrder,
+		tex,
 		glProgramState,
 		BlendFunc::ALPHA_NON_PREMULTIPLIED,
 		_primitive,
 		transform,
 		flags);
 
-	renderer->addCommand(&_customCommand);
+	renderer->addCommand(&_primitiveCommand);
 
 }
 
@@ -180,6 +211,14 @@ bool PrimitiveScene::init()
 	this->addChild(node);
 	node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
 
+	auto node2 = PrimitiveNode::create();
+	//node->setPosition(visibleSize / 2);
+	this->addChild(node2);
+	node2->setPosition(Vec2(node2->getContentSize().width*2 + 20,visibleSize.height/2));
+
+	auto cache = Director::getInstance()->getTextureCache();
+	auto texture = cache->addImage("HelloWorld.png");
+	node2->setTexture(texture);
 
     return true;
 }
