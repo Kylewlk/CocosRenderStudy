@@ -59,7 +59,6 @@ PrimitiveNode::PrimitiveNode()
 	:_texture(0)
 {
 	_vertShader = ccPositionTextureColor_vert;
-	_fragShader = "uniform vec4 Color;  void main(void) { gl_FragColor = Color; }";
 	_fragShader = ccPositionTextureColor_frag2;
 }
 
@@ -130,7 +129,6 @@ void PrimitiveNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& trans
 
 	auto glProgramState = getGLProgramState();
 	glProgramState->setUniformInt("HasTex", _texture!=nullptr);
-	//glProgramState->setVertexAttribPointer("a_position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint tex = (_texture == nullptr) ? 0 : _texture->getName();
 	_primitiveCommand.init(_globalZOrder,

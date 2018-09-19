@@ -56,7 +56,6 @@ void main()
 )";
 
 BatchNode::BatchNode()
-	:_texture(0)
 {
 	_vertShader = ccPositionTextureColor_vert;
 	_fragShader = "uniform vec4 Color;  void main(void) { gl_FragColor = Color; }";
@@ -65,13 +64,10 @@ BatchNode::BatchNode()
 
 BatchNode::~BatchNode()
 {
-	CC_SAFE_RELEASE(_primitive);
 }
 
 void BatchNode::setTexture(cocos2d::Texture2D * texture)
 {
-	_texture = texture;
-	_texture->retain();
 }
 
 bool BatchNode::init()
@@ -85,37 +81,7 @@ bool BatchNode::init()
 
 
 
-	V3F_C4B_T2F data[] = {
-		{ { 0,    0,0 },{ 255,  0,  0,255 },{ 0,1 } },
-		{ { 200,  0,0 },{ 0,  255,255,255 },{ 1,1 } },
-		{ { 200,200,0 },{ 255,255,  0,255 },{ 1,0 } },
-		{ { 0,  200,0 },{ 255,255,255,255 },{ 0,0 } },
-	};
 
-	uint16_t indices[] = {
-		0,1,2,
-		2,0,3
-	};
-
-	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0]);
-	static const int TOTAL_INDICES = TOTAL_VERTS * 6 / 4;
-
-	auto vertexBuffer = VertexBuffer::create(sizeof(V3F_C4B_T2F), TOTAL_VERTS);
-	vertexBuffer->updateVertices(data, TOTAL_VERTS, 0);
-
-	auto vertsData = VertexData::create();
-	vertsData->setStream(vertexBuffer, VertexStreamAttribute(0, GLProgram::VERTEX_ATTRIB_POSITION, GL_FLOAT, 3));
-	vertsData->setStream(vertexBuffer, VertexStreamAttribute(offsetof(V3F_C4B_T2F, colors), GLProgram::VERTEX_ATTRIB_COLOR, GL_UNSIGNED_BYTE, 4, true));
-	vertsData->setStream(vertexBuffer, VertexStreamAttribute(offsetof(V3F_C4B_T2F, texCoords), GLProgram::VERTEX_ATTRIB_TEX_COORD, GL_FLOAT, 2));
-
-
-	auto indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_SHORT_16, TOTAL_INDICES);
-	indexBuffer->updateIndices(indices, TOTAL_INDICES, 0);
-
-	_primitive = Primitive::create(vertsData, indexBuffer, GL_TRIANGLES);
-	_primitive->setCount(TOTAL_INDICES);
-	_primitive->setStart(0);
-	_primitive->retain();
 
 
 
@@ -129,19 +95,9 @@ void BatchNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform
 {
 
 	auto glProgramState = getGLProgramState();
-	glProgramState->setUniformInt("HasTex", _texture!=nullptr);
-	//glProgramState->setVertexAttribPointer("a_position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-	GLuint tex = (_texture == nullptr) ? 0 : _texture->getName();
-	_primitiveCommand.init(_globalZOrder,
-		tex,
-		glProgramState,
-		BlendFunc::ALPHA_NON_PREMULTIPLIED,
-		_primitive,
-		transform,
-		flags);
 
-	renderer->addCommand(&_primitiveCommand);
+	//renderer->addCommand(&_batchCommand);
 
 }
 

@@ -44,10 +44,9 @@ protected:
 
 	std::string _vertShader;
 	std::string _fragShader;
-	cocos2d::Texture2D* _texture;
+	cocos2d::TextureAtlas* _textureAtlas;
 
-	cocos2d::Primitive* _primitive;
-	cocos2d::PrimitiveCommand _primitiveCommand;
+	cocos2d::BatchCommand _batchCommand;
 private:
 
 };
