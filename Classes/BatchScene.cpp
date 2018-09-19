@@ -50,7 +50,7 @@ void main()
 	}
 	else
 	{
-		gl_FragColor = v_fragmentColor;
+		gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
 	}
 }
 )";
@@ -85,9 +85,10 @@ bool BatchNode::init()
 
 
 
-	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
-	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
-	setGLProgramState(glprogramstate);
+	//auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
+	//auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
+	//setGLProgramState(glprogramstate);
+	setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR, tex));
 	return true;
 }
 
@@ -96,9 +97,20 @@ void BatchNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform
 
 	auto glProgramState = getGLProgramState();
 
+	// Optimization: Fast Dispatch
+	if (_textureAtlas->getTotalQuads() == 0)
+	{
+		return;
+	}
 
-	//renderer->addCommand(&_batchCommand);
+	_batchCommand.init(_globalZOrder, 
+		getGLProgram(),
+		BlendFunc::ALPHA_NON_PREMULTIPLIED,
+		 _textureAtlas,
+		transform,
+		flags);
 
+	renderer->addCommand(&_batchCommand);
 }
 
 
