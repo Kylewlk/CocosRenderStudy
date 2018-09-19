@@ -83,16 +83,27 @@ bool BatchNode::init()
 	auto tex = cache->addImage("Man.png");
 
 	_textureAtlas = TextureAtlas::createWithTexture(tex, 30);
+	
+	float w = tex->getPixelsWide();
+	float h = tex->getPixelsHigh();
 
 	cocos2d::V3F_C4B_T2F_Quad quad = {
-		{ { 0,    0,0 },{ 255,  255,  255,255 },{ 0,1 } },
-		{ { 120,  0,0 },{ 255,  255,255,255 },{ 1,1 } },
-		{ { 120,120,0 },{ 255,255,  255,255 },{ 1,0 } },
-		{ { 0,  120,0 },{ 255,255,255,255 },{ 0,0 } },
+		{ { 0,      h, 0 },{ 255, 255, 255, 255 },{ 0,0 } },
+		{ { 0,      0, 0 },{ 255, 255, 255, 255 },{ 0,1 } },
+		{ { w*0.5f,  h, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
+		{ { w*0.5f,  0, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
 	};
 
 
+	cocos2d::V3F_C4B_T2F_Quad quad2 = {
+		{ { w*0.5f +200,      h, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
+		{ { w*0.5f + 200,      0, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
+		{ { w + 200,  h, 0 },{ 255, 255, 255, 255 },{ 1,1 } },
+		{ { w + 200,  0, 0 },{ 255, 255, 255, 255 },{ 1,0 } },
+	};
+
 	_textureAtlas->insertQuad(&quad, 0);
+	_textureAtlas->insertQuad(&quad2, 1);
 	_textureAtlas->retain();
 
 
@@ -189,15 +200,6 @@ bool BatchScene::init()
 	//node->setPosition(visibleSize / 2);
 	this->addChild(node);
 	node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
-
-	auto node2 = BatchNode::create();
-	//node->setPosition(visibleSize / 2);
-	this->addChild(node2);
-	node2->setPosition(Vec2(node2->getContentSize().width*2 + 20,visibleSize.height/2));
-
-	auto cache = Director::getInstance()->getTextureCache();
-	auto texture = cache->addImage("HelloWorld.png");
-	node2->setTexture(texture);
 
     return true;
 }
