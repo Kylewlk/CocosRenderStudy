@@ -79,10 +79,21 @@ bool BatchNode::init()
 	setContentSize(Size(SIZE_X, SIZE_Y));
 	setAnchorPoint(Vec2(0.5f, 0.5f));
 
+	auto cache = Director::getInstance()->getTextureCache();
+	auto tex = cache->addImage("Man.png");
+
+	_textureAtlas = TextureAtlas::createWithTexture(tex, 30);
+
+	cocos2d::V3F_C4B_T2F_Quad quad = {
+		{ { 0,    0,0 },{ 255,  255,  255,255 },{ 0,1 } },
+		{ { 120,  0,0 },{ 255,  255,255,255 },{ 1,1 } },
+		{ { 120,120,0 },{ 255,255,  255,255 },{ 1,0 } },
+		{ { 0,  120,0 },{ 255,255,255,255 },{ 0,0 } },
+	};
 
 
-
-
+	_textureAtlas->insertQuad(&quad, 0);
+	_textureAtlas->retain();
 
 
 	//auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
