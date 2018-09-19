@@ -22,7 +22,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "PrimitiveScene.h"
+#include "BatchScene.h"
 
 USING_NS_CC;
 
@@ -55,7 +55,7 @@ void main()
 }
 )";
 
-PrimitiveNode::PrimitiveNode()
+BatchNode::BatchNode()
 	:_texture(0)
 {
 	_vertShader = ccPositionTextureColor_vert;
@@ -63,18 +63,18 @@ PrimitiveNode::PrimitiveNode()
 	_fragShader = ccPositionTextureColor_frag2;
 }
 
-PrimitiveNode::~PrimitiveNode()
+BatchNode::~BatchNode()
 {
 	CC_SAFE_RELEASE(_primitive);
 }
 
-void PrimitiveNode::setTexture(cocos2d::Texture2D * texture)
+void BatchNode::setTexture(cocos2d::Texture2D * texture)
 {
 	_texture = texture;
 	_texture->retain();
 }
 
-bool PrimitiveNode::init()
+bool BatchNode::init()
 {
 	if (!Node::init())
 	{
@@ -125,7 +125,7 @@ bool PrimitiveNode::init()
 	return true;
 }
 
-void PrimitiveNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void BatchNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
 
 	auto glProgramState = getGLProgramState();
@@ -148,9 +148,9 @@ void PrimitiveNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& trans
 
 
 
-Scene* PrimitiveScene::createScene()
+Scene* BatchScene::createScene()
 {
-    return PrimitiveScene::create();
+    return BatchScene::create();
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -161,7 +161,7 @@ static void problemLoading(const char* filename)
 }
 
 // on "init" you need to initialize your instance
-bool PrimitiveScene::init()
+bool BatchScene::init()
 {
     //////////////////////////////
     // 1. super init first
@@ -181,7 +181,7 @@ bool PrimitiveScene::init()
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
-                                           CC_CALLBACK_1(PrimitiveScene::menuCloseCallback, this));
+                                           CC_CALLBACK_1(BatchScene::menuCloseCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -206,12 +206,12 @@ bool PrimitiveScene::init()
 
     // add a label shows "Hello World"
     // create and initialize a label
-	auto node = PrimitiveNode::create();
+	auto node = BatchNode::create();
 	//node->setPosition(visibleSize / 2);
 	this->addChild(node);
 	node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
 
-	auto node2 = PrimitiveNode::create();
+	auto node2 = BatchNode::create();
 	//node->setPosition(visibleSize / 2);
 	this->addChild(node2);
 	node2->setPosition(Vec2(node2->getContentSize().width*2 + 20,visibleSize.height/2));
@@ -224,7 +224,7 @@ bool PrimitiveScene::init()
 }
 
 
-void PrimitiveScene::menuCloseCallback(Ref* pSender)
+void BatchScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
     Director::getInstance()->end();
