@@ -31,9 +31,6 @@ const float SIZE_Y = 200;
 
 
 static const char* ccPositionTextureColor_frag2 = R"(
-
-uniform int HasTex;  
-
 #ifdef GL_ES
 precision lowp float;
 #endif
@@ -43,22 +40,14 @@ varying vec2 v_texCoord;
 
 void main()
 {
-	if( HasTex != 0 )
-	{
-		vec4 tc = texture2D(CC_Texture0, v_texCoord);	
-		gl_FragColor = mix (v_fragmentColor , tc, tc.w);
-	}
-	else
-	{
-		gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
-	}
+	vec4 tc = texture2D(CC_Texture0, v_texCoord);	
+	gl_FragColor = mix (v_fragmentColor , tc, tc.w);
 }
 )";
 
 BatchNode::BatchNode()
 {
 	_vertShader = ccPositionTextureColor_vert;
-	_fragShader = "uniform vec4 Color;  void main(void) { gl_FragColor = Color; }";
 	_fragShader = ccPositionTextureColor_frag2;
 }
 
@@ -84,8 +73,8 @@ bool BatchNode::init()
 
 	_textureAtlas = TextureAtlas::createWithTexture(tex, 30);
 	
-	float w = tex->getPixelsWide();
-	float h = tex->getPixelsHigh();
+	float w = tex->getPixelsWide()*2;
+	float h = tex->getPixelsHigh()*2;
 
 	cocos2d::V3F_C4B_T2F_Quad quad = {
 		{ { 0,      h, 0 },{ 255, 255, 255, 255 },{ 0,0 } },
@@ -107,10 +96,10 @@ bool BatchNode::init()
 	_textureAtlas->retain();
 
 
-	//auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
-	//auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
-	//setGLProgramState(glprogramstate);
-	setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR, tex));
+	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
+	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
+	setGLProgramState(glprogramstate);
+	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR, tex));
 	return true;
 }
 
