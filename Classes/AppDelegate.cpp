@@ -27,6 +27,8 @@
 #include "CustomScene.h"
 #include "PrimitiveScene.h"
 #include "BatchScene.h"
+#include "GroupScene.h"
+
 
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
@@ -108,7 +110,8 @@ bool AppDelegate::applicationDidFinishLaunching() {
     //auto scene = HelloWorld::createScene();
 	//auto scene = CustomScene::createScene();
 	//auto scene = PrimitiveScene::createScene();
-	auto scene = BatchScene::createScene();
+	//auto scene = BatchScene::createScene();
+	auto scene = GroupScene::createScene();
 
     // run
     director->runWithScene(scene);

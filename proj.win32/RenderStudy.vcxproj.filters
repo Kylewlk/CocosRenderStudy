@@ -30,6 +30,9 @@
     <ClCompile Include="..\Classes\BatchScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\GroupScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -48,6 +51,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\BatchScene.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\GroupScene.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
