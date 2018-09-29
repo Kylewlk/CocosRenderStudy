@@ -36,17 +36,15 @@ public:
 
 	virtual void draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags) override;
 
-	void setTexture(cocos2d::Texture2D* texture);
-
 protected:
 	MeshNode();
 	~MeshNode();
 
 	std::string _vertShader;
 	std::string _fragShader;
-	cocos2d::TextureAtlas* _textureAtlas;
 
-	cocos2d::BatchCommand _batchCommand;
+	MeshIndexData*      _meshIndexData;
+	cocos2d::MeshCommand* _meshCommand;
 private:
 
 };

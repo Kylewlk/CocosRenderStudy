@@ -23,6 +23,7 @@
  ****************************************************************************/
 
 #include "MeshScene.h"
+#include "3d/CCBundle3D.h"
 
 USING_NS_CC;
 
@@ -55,9 +56,6 @@ MeshNode::~MeshNode()
 {
 }
 
-void MeshNode::setTexture(cocos2d::Texture2D * texture)
-{
-}
 
 bool MeshNode::init()
 {
@@ -69,31 +67,25 @@ bool MeshNode::init()
 	setAnchorPoint(Vec2(0.5f, 0.5f));
 
 	auto cache = Director::getInstance()->getTextureCache();
-	auto tex = cache->addImage("Man.png");
 
-	_textureAtlas = TextureAtlas::createWithTexture(tex, 30);
-	
-	float w = tex->getPixelsWide()*2;
-	float h = tex->getPixelsHigh()*2;
+	std::string fullPath = FileUtils::getInstance()->fullPathForFilename("1.c3t");
 
-	cocos2d::V3F_C4B_T2F_Quad quad = {
-		{ { 0,      h, 0 },{ 255, 255, 255, 255 },{ 0,0 } },
-		{ { 0,      0, 0 },{ 255, 255, 255, 255 },{ 0,1 } },
-		{ { w*0.5f,  h, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
-		{ { w*0.5f,  0, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
-	};
+	MeshDatas* meshdatas = new (std::nothrow) MeshDatas();
+	MaterialDatas* materialdatas = new (std::nothrow) MaterialDatas();
+	NodeDatas* nodeDatas = new (std::nothrow) NodeDatas();
+	auto bundle = Bundle3D::createBundle();
+	if (!bundle->load(fullPath))
+	{
+		Bundle3D::destroyBundle(bundle);
+		return false;
+	}
+	bundle->loadMeshDatas(*meshdatas);
+	bundle->loadMaterials(*materialdatas);
+	bundle->loadNodes(*nodeDatas);
+	Bundle3D::destroyBundle(bundle);
 
+	auto VertexData = MeshVertexData::create(*(meshdatas->meshDatas.front()));
 
-	cocos2d::V3F_C4B_T2F_Quad quad2 = {
-		{ { w*0.5f +200,      h, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
-		{ { w*0.5f + 200,      0, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
-		{ { w + 200,  h, 0 },{ 255, 255, 255, 255 },{ 1,1 } },
-		{ { w + 200,  0, 0 },{ 255, 255, 255, 255 },{ 1,0 } },
-	};
-
-	_textureAtlas->insertQuad(&quad, 0);
-	_textureAtlas->insertQuad(&quad2, 1);
-	_textureAtlas->retain();
 
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
@@ -108,20 +100,7 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 
 	auto glProgramState = getGLProgramState();
 
-	// Optimization: Fast Dispatch
-	if (_textureAtlas->getTotalQuads() == 0)
-	{
-		return;
-	}
 
-	_batchCommand.init(_globalZOrder, 
-		getGLProgram(),
-		BlendFunc::ALPHA_NON_PREMULTIPLIED,
-		 _textureAtlas,
-		transform,
-		flags);
-
-	renderer->addCommand(&_batchCommand);
 }
 
 
