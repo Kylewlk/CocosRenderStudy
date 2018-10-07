@@ -42,7 +42,7 @@ varying vec2 v_texCoord;
 void main()
 {
 	vec4 tc = texture2D(CC_Texture0, v_texCoord);	
-	gl_FragColor = mix (v_fragmentColor , tc, tc.w);
+	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
 }
 )";
 
@@ -85,13 +85,28 @@ bool MeshNode::init()
 	Bundle3D::destroyBundle(bundle);
 
 	auto VertexData = MeshVertexData::create(*(meshdatas->meshDatas.front()));
+	NodeData *nodedata = nodeDatas->nodes.front()->children.front();
+	_meshIndexData =  VertexData->getMeshIndexDataById(nodedata->modelNodeDatas.front()->subMeshId);
+
+	_material = Sprite3DMaterial::createBuiltInMaterial(Sprite3DMaterial::MaterialType::DIFFUSE, false);
+
+	for (auto technique : _material->getTechniques())
+	{
+		for (auto pass : technique->getPasses())
+		{
+			auto vertexAttribBinding = VertexAttribBinding::create(_meshIndexData, pass->getGLProgramState());
+			pass->setVertexAttribBinding(vertexAttribBinding);
+		}
+	}
+	_meshIndexData->retain();
+	VertexData->retain();
+	_material->retain();
 
 
-
-	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
-	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
-	setGLProgramState(glprogramstate);
-	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR, tex));
+	//auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
+	//auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
+	//setGLProgramState(glprogramstate);
+	setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
 	return true;
 }
 
@@ -100,6 +115,40 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 
 	auto glProgramState = getGLProgramState();
 
+	if (!isVisible())
+		return;
+
+
+	_meshCommand.init(getGlobalZOrder(),
+		_material,
+		_meshIndexData->getVertexBuffer()->getVBO(),
+		_meshIndexData->getIndexBuffer()->getVBO(),
+		_meshIndexData->getPrimitiveType(),
+		GL_UNSIGNED_SHORT,
+		_meshIndexData->getIndexBuffer()->getIndexNumber(),
+		transform,
+		flags);
+
+
+	_material->getStateBlock()->setDepthWrite(true);
+
+
+	_meshCommand.setSkipBatching(true);
+	_meshCommand.setTransparent(false);
+	_meshCommand.set3D(true);
+	_material->getStateBlock()->setBlend(false);
+
+	// set default uniforms for Mesh
+	// 'u_color' and others
+	const auto scene = Director::getInstance()->getRunningScene();
+	auto technique = _material->getTechnique();
+	for (const auto pass : technique->getPasses())
+	{
+		auto programState = pass->getGLProgramState();
+		programState->setUniformVec4("u_color", Vec4(0.0, 1.0, 1.0, 1.0));
+	}
+
+	renderer->addCommand(&_meshCommand);
 
 }
 
@@ -168,18 +217,22 @@ bool MeshScene::init()
 	//this->addChild(node);
 	//node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
 
-	auto sp = Sprite3D::create("orc.c3t");
-	sp->setScale(10, 10);
-	sp->setRotation3D(Vec3(0, 180, 0));
-	sp->setPosition(visibleSize / 2);
+	//auto sp = Sprite3D::create("orc.c3t");
+	//sp->setScale(10, 10);
+	//sp->setRotation3D(Vec3(0, 180, 0));
+	//sp->setPosition(visibleSize / 2);
 
-	auto animation = Animation3D::create("orc.c3t", "Take 001");
-	if (animation)
-	{
-		auto animate = Animate3D::create(animation);
-		sp->runAction(RepeatForever::create(animate));
-	}
-	this->addChild(sp);
+	//auto animation = Animation3D::create("orc.c3t", "Take 001");
+	//if (animation)
+	//{
+	//	auto animate = Animate3D::create(animation);
+	//	sp->runAction(RepeatForever::create(animate));
+	//}
+	//this->addChild(sp);
+
+	auto meshNode = MeshNode::create();
+	meshNode->setPosition(visibleSize / 2);
+	this->addChild(meshNode);
 
     return true;
 }

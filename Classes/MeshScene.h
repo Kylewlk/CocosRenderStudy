@@ -43,8 +43,10 @@ protected:
 	std::string _vertShader;
 	std::string _fragShader;
 
-	MeshIndexData*      _meshIndexData;
-	cocos2d::MeshCommand* _meshCommand;
+	cocos2d::MeshIndexData* _meshIndexData;
+	cocos2d::Material* _material;
+
+	cocos2d::MeshCommand _meshCommand;
 private:
 
 };
