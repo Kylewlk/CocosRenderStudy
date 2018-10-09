@@ -30,26 +30,34 @@ USING_NS_CC;
 const float SIZE_X = 200;
 const float SIZE_Y = 200;
 
+static const char* ccPositionNormal_vert = R"(
+attribute vec3 a_position;
+attribute vec3 a_normal;
 
-static const char* ccPositionTextureColor_frag2 = R"(
-#ifdef GL_ES
-precision lowp float;
-#endif
+varying vec3 v_normal;
 
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
+void main(void)
+{
+	v_normal = normalize(CC_NormalMatrix * a_normal);	
+    gl_Position = CC_MVPMatrix * vec4(a_position, 1.0);
+}
+)";
+
+static const char* ccPositionNormal_frag = R"(
+uniform vec4 Color;
+
+varying vec3 v_normal;
 
 void main()
 {
-	vec4 tc = texture2D(CC_Texture0, v_texCoord);	
 	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
 }
 )";
 
 MeshNode::MeshNode()
 {
-	_vertShader = ccPositionTextureColor_vert;
-	_fragShader = ccPositionTextureColor_frag2;
+	_vertShader = ccPositionNormal_vert;
+	_fragShader = ccPositionNormal_frag;
 }
 
 MeshNode::~MeshNode()
@@ -65,6 +73,7 @@ bool MeshNode::init()
 	}
 	setContentSize(Size(SIZE_X, SIZE_Y));
 	setAnchorPoint(Vec2(0.5f, 0.5f));
+	
 
 	auto cache = Director::getInstance()->getTextureCache();
 
@@ -88,25 +97,24 @@ bool MeshNode::init()
 	NodeData *nodedata = nodeDatas->nodes.front()->children.front();
 	_meshIndexData =  VertexData->getMeshIndexDataById(nodedata->modelNodeDatas.front()->subMeshId);
 
-	_material = Sprite3DMaterial::createBuiltInMaterial(Sprite3DMaterial::MaterialType::DIFFUSE, false);
-
-	for (auto technique : _material->getTechniques())
-	{
-		for (auto pass : technique->getPasses())
-		{
-			auto vertexAttribBinding = VertexAttribBinding::create(_meshIndexData, pass->getGLProgramState());
-			pass->setVertexAttribBinding(vertexAttribBinding);
-		}
-	}
+	_stateBlock = RenderState::StateBlock::create();
+	_stateBlock->setBlend(false);
+	_stateBlock->setCullFace(false);
+	_stateBlock->setDepthTest(true);
 	_meshIndexData->retain();
 	VertexData->retain();
-	_material->retain();
+	_stateBlock->retain();
 
 
-	//auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
-	//auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
-	//setGLProgramState(glprogramstate);
-	setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
+	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
+	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
+	setGLProgramState(glprogramstate);
+
+	GLsizei stride = VertexData->getVertexBuffer()->getSizePerVertex();
+	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
+	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
+
+	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
 	return true;
 }
 
@@ -118,9 +126,10 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 	if (!isVisible())
 		return;
 
-
 	_meshCommand.init(getGlobalZOrder(),
-		_material,
+		0,
+		glProgramState,
+		_stateBlock,
 		_meshIndexData->getVertexBuffer()->getVBO(),
 		_meshIndexData->getIndexBuffer()->getVBO(),
 		_meshIndexData->getPrimitiveType(),
@@ -129,24 +138,9 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 		transform,
 		flags);
 
-
-	_material->getStateBlock()->setDepthWrite(true);
-
-
 	_meshCommand.setSkipBatching(true);
 	_meshCommand.setTransparent(false);
 	_meshCommand.set3D(true);
-	_material->getStateBlock()->setBlend(false);
-
-	// set default uniforms for Mesh
-	// 'u_color' and others
-	const auto scene = Director::getInstance()->getRunningScene();
-	auto technique = _material->getTechnique();
-	for (const auto pass : technique->getPasses())
-	{
-		auto programState = pass->getGLProgramState();
-		programState->setUniformVec4("u_color", Vec4(0.0, 1.0, 1.0, 1.0));
-	}
 
 	renderer->addCommand(&_meshCommand);
 
@@ -232,6 +226,7 @@ bool MeshScene::init()
 
 	auto meshNode = MeshNode::create();
 	meshNode->setPosition(visibleSize / 2);
+	meshNode->setScale(10);
 	this->addChild(meshNode);
 
     return true;

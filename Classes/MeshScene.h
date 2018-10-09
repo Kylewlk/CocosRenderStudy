@@ -44,7 +44,7 @@ protected:
 	std::string _fragShader;
 
 	cocos2d::MeshIndexData* _meshIndexData;
-	cocos2d::Material* _material;
+	cocos2d::RenderState::StateBlock* _stateBlock;
 
 	cocos2d::MeshCommand _meshCommand;
 private:
