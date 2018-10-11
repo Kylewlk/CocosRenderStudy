@@ -64,7 +64,8 @@ MeshNode::~MeshNode()
 {
 }
 
-
+IndexBuffer * indexBuffer = nullptr;
+VertexBuffer *vertexBuffer = nullptr;
 bool MeshNode::init()
 {
 	if (!Node::init())
@@ -79,40 +80,66 @@ bool MeshNode::init()
 
 	std::string fullPath = FileUtils::getInstance()->fullPathForFilename("1.c3t");
 
-	MeshDatas* meshdatas = new (std::nothrow) MeshDatas();
-	MaterialDatas* materialdatas = new (std::nothrow) MaterialDatas();
-	NodeDatas* nodeDatas = new (std::nothrow) NodeDatas();
-	auto bundle = Bundle3D::createBundle();
-	if (!bundle->load(fullPath))
-	{
-		Bundle3D::destroyBundle(bundle);
-		return false;
-	}
-	bundle->loadMeshDatas(*meshdatas);
-	bundle->loadMaterials(*materialdatas);
-	bundle->loadNodes(*nodeDatas);
-	Bundle3D::destroyBundle(bundle);
+	//MeshDatas* meshdatas = new (std::nothrow) MeshDatas();
+	//MaterialDatas* materialdatas = new (std::nothrow) MaterialDatas();
+	//NodeDatas* nodeDatas = new (std::nothrow) NodeDatas();
+	//auto bundle = Bundle3D::createBundle();
+	//if (!bundle->load(fullPath))
+	//{
+	//	Bundle3D::destroyBundle(bundle);
+	//	return false;
+	//}
+	//bundle->loadMeshDatas(*meshdatas);
+	//bundle->loadMaterials(*materialdatas);
+	//bundle->loadNodes(*nodeDatas);
+	//Bundle3D::destroyBundle(bundle);
 
-	auto VertexData = MeshVertexData::create(*(meshdatas->meshDatas.front()));
-	NodeData *nodedata = nodeDatas->nodes.front()->children.front();
-	_meshIndexData =  VertexData->getMeshIndexDataById(nodedata->modelNodeDatas.front()->subMeshId);
+	//auto VertexData = MeshVertexData::create(*(meshdatas->meshDatas.front()));
+	//NodeData *nodedata = nodeDatas->nodes.front()->children.front();
+	//_meshIndexData =  VertexData->getMeshIndexDataById(nodedata->modelNodeDatas.front()->subMeshId);
+
+	//_meshIndexData->retain();
+	//VertexData->retain();
 
 	_stateBlock = RenderState::StateBlock::create();
 	_stateBlock->setBlend(false);
 	_stateBlock->setCullFace(false);
 	_stateBlock->setDepthTest(true);
-	_meshIndexData->retain();
-	VertexData->retain();
 	_stateBlock->retain();
+
+
+	V3F_C4B_T2F data[] = {
+		{ { 0,    0,0 },{ 255,  0,  0,255 },{ 0,1 } },
+		{ { 200,  0,0 },{ 0,  255,255,255 },{ 1,1 } },
+		{ { 200,200,0 },{ 255,255,  0,255 },{ 1,0 } },
+		{ { 0,  200,0 },{ 255,255,255,255 },{ 0,0 } },
+	};
+
+	uint16_t indices[] = {
+		0,1,2,
+		2,0,3
+	};
+
+	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0]);
+	static const int TOTAL_INDICES = TOTAL_VERTS * 6 / 4;
+
+	vertexBuffer = VertexBuffer::create(sizeof(V3F_C4B_T2F), TOTAL_VERTS);
+	vertexBuffer->updateVertices(data, TOTAL_VERTS, 0);
+
+	indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_UINT_32, TOTAL_INDICES);
+	indexBuffer->updateIndices(indices, TOTAL_INDICES, 0);
+
+	vertexBuffer->retain();
+	indexBuffer->retain();
 
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
 	setGLProgramState(glprogramstate);
 
-	GLsizei stride = VertexData->getVertexBuffer()->getSizePerVertex();
+	GLsizei stride = sizeof(V3F_C4B_T2F);
 	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
-	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
+	//glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
 
 	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
 	return true;
@@ -130,11 +157,11 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 		0,
 		glProgramState,
 		_stateBlock,
-		_meshIndexData->getVertexBuffer()->getVBO(),
-		_meshIndexData->getIndexBuffer()->getVBO(),
-		_meshIndexData->getPrimitiveType(),
+		vertexBuffer->getVBO(),
+		indexBuffer->getVBO(),
+		GL_TRIANGLES,
 		GL_UNSIGNED_SHORT,
-		_meshIndexData->getIndexBuffer()->getIndexNumber(),
+		indexBuffer->getIndexNumber(),
 		transform,
 		flags);
 
@@ -226,7 +253,7 @@ bool MeshScene::init()
 
 	auto meshNode = MeshNode::create();
 	meshNode->setPosition(visibleSize / 2);
-	meshNode->setScale(10);
+	//meshNode->setScale(10);
 	this->addChild(meshNode);
 
     return true;
