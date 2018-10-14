@@ -50,7 +50,7 @@ varying vec3 v_normal;
 
 void main()
 {
-	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0) *(0.1 + 0.5*max(v_normal.z, 0)) ;
 }
 )";
 
@@ -105,6 +105,7 @@ bool MeshNode::init()
 	_stateBlock->setBlend(false);
 	_stateBlock->setCullFace(false);
 	_stateBlock->setDepthTest(true);
+	_stateBlock->setDepthFunction(RenderState::DEPTH_GREATER);
 	_stateBlock->retain();
 
 
@@ -115,7 +116,7 @@ bool MeshNode::init()
 		{ { 0,  200,0 },{ 255,255,255,255 },{ 0,0 } },
 	};
 
-	uint16_t indices[] = {
+	uint32_t indices[] = {
 		0,1,2,
 		2,0,3
 	};
@@ -123,13 +124,48 @@ bool MeshNode::init()
 	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0]);
 	static const int TOTAL_INDICES = TOTAL_VERTS * 6 / 4;
 
-	vertexBuffer = VertexBuffer::create(sizeof(V3F_C4B_T2F), TOTAL_VERTS);
-	vertexBuffer->updateVertices(data, TOTAL_VERTS, 0);
+	float data2[] = {
+		120.787605,  119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
+		-120.787605, -119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
+		-120.787605,  119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
+		120.787605, -119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
+		-120.787605,  119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
+		120.787605, -119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
+		120.787605,  119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
+		-120.787605, -119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
+		120.787605,  119.807968,  119.807968,  1.000000,  0.000000,  0.000000,
+		120.787605, -119.807968, -119.807968,  1.000000,  0.000000,  0.000000,
+		120.787605,  119.807968, -119.807968,  1.000000,  0.000000,  0.000000,
+		120.787605, -119.807968,  119.807968,  1.000000,  0.000000,  0.000000,
+		-120.787605,  119.807968, -119.807968, -1.000000,  0.000000,  0.000000,
+		-120.787605, -119.807968,  119.807968, -1.000000,  0.000000,  0.000000,
+		-120.787605,  119.807968,  119.807968, -1.000000,  0.000000,  0.000000,
+		-120.787605, -119.807968, -119.807968, -1.000000,  0.000000,  0.000000,
+		-120.787605,  119.807968, -119.807968,  0.000000,  1.000000,  0.000000,
+		120.787605,  119.807968,  119.807968,  0.000000,  1.000000,  0.000000,
+		120.787605,  119.807968, -119.807968,  0.000000,  1.000000,  0.000000,
+		-120.787605,  119.807968,  119.807968,  0.000000,  1.000000,  0.000000,
+		-120.787605, -119.807968,  119.807968,  0.000000, -1.000000,  0.000000,
+		120.787605, -119.807968, -119.807968,  0.000000, -1.000000,  0.000000,
+		120.787605, -119.807968,  119.807968,  0.000000, -1.000000,  0.000000,
+		-120.787605, -119.807968, -119.807968,  0.000000, -1.000000,  0.000000
+	};
 
-	indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_UINT_32, TOTAL_INDICES);
-	indexBuffer->updateIndices(indices, TOTAL_INDICES, 0);
+	uint32_t indices2[] = {
+		0,   1,   2,   0,   3,   1,   4,   5,   6,   4,   7,   5,
+		8,   9,  10,   8,  11,   9,  12,  13,  14,  12,  15,  13,
+		16,  17,  18,  16,  19,  17,  20,  21,  22,  20,  23,  21
+	};
 
+	static const int TOTAL_VERTS2 = sizeof(data2) / sizeof(data2[0])/6;
+	static const int TOTAL_INDICES2 = sizeof(indices2) / sizeof(indices2[0]);
+
+	vertexBuffer = VertexBuffer::create(sizeof(float)*6, TOTAL_VERTS2);
+	vertexBuffer->updateVertices(data2, TOTAL_VERTS2, 0);
 	vertexBuffer->retain();
+
+	indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_UINT_32, TOTAL_INDICES2);
+	indexBuffer->updateIndices(indices2, TOTAL_INDICES2, 0);
 	indexBuffer->retain();
 
 
@@ -137,13 +173,17 @@ bool MeshNode::init()
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
 	setGLProgramState(glprogramstate);
 
-	GLsizei stride = sizeof(V3F_C4B_T2F);
+	GLsizei stride = sizeof(float) * 6;
 	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
-	//glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
+	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
 
 	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
 	return true;
 }
+
+
+cocos2d::CustomCommand _beforeCommand;
+cocos2d::CustomCommand _afterCommand;
 
 void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
@@ -153,6 +193,10 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 	if (!isVisible())
 		return;
 
+	_beforeCommand.init(-1);
+	_beforeCommand.func = []() { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); };
+	renderer->addCommand(&_beforeCommand);
+
 	_meshCommand.init(getGlobalZOrder(),
 		0,
 		glProgramState,
@@ -160,7 +204,7 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 		vertexBuffer->getVBO(),
 		indexBuffer->getVBO(),
 		GL_TRIANGLES,
-		GL_UNSIGNED_SHORT,
+		GL_UNSIGNED_INT,
 		indexBuffer->getIndexNumber(),
 		transform,
 		flags);
@@ -171,10 +215,12 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 
 	renderer->addCommand(&_meshCommand);
 
+	_afterCommand.init(1);
+	_afterCommand.func = []() {glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); };
+	renderer->addCommand(&_afterCommand);
+
+
 }
-
-
-
 
 Scene* MeshScene::createScene()
 {
@@ -252,7 +298,7 @@ bool MeshScene::init()
 	//this->addChild(sp);
 
 	auto meshNode = MeshNode::create();
-	meshNode->setPosition(visibleSize / 2);
+	meshNode->setPosition(500,350);
 	//meshNode->setScale(10);
 	this->addChild(meshNode);
 
