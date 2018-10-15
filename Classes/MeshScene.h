@@ -43,8 +43,9 @@ protected:
 	std::string _vertShader;
 	std::string _fragShader;
 
-	cocos2d::MeshIndexData* _meshIndexData;
 	cocos2d::RenderState::StateBlock* _stateBlock;
+	cocos2d::IndexBuffer *_indexBuffer;
+	cocos2d::VertexBuffer *_vertexBuffer;
 
 	cocos2d::MeshCommand _meshCommand;
 private:

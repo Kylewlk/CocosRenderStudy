@@ -25,6 +25,9 @@
 #include "MeshScene.h"
 #include "3d/CCBundle3D.h"
 
+#pragma warning(disable:4838)
+#pragma warning(disable:4305)
+
 USING_NS_CC;
 
 const float SIZE_X = 200;
@@ -50,7 +53,7 @@ varying vec3 v_normal;
 
 void main()
 {
-	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0) *(0.1 + 0.5*max(v_normal.z, 0)) ;
+	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0) *(0.1 + 0.6*max(v_normal.z, 0)) + vec4(1.0) * pow(max(v_normal.z, 0), 70)*0.2;
 }
 )";
 
@@ -58,14 +61,18 @@ MeshNode::MeshNode()
 {
 	_vertShader = ccPositionNormal_vert;
 	_fragShader = ccPositionNormal_frag;
+	_vertexBuffer = nullptr;
+	_indexBuffer = nullptr;
+	_stateBlock = nullptr;
 }
 
 MeshNode::~MeshNode()
 {
+	CC_SAFE_RELEASE(_vertexBuffer);
+	CC_SAFE_RELEASE(_indexBuffer);
+	CC_SAFE_RELEASE(_stateBlock);
 }
 
-IndexBuffer * indexBuffer = nullptr;
-VertexBuffer *vertexBuffer = nullptr;
 bool MeshNode::init()
 {
 	if (!Node::init())
@@ -73,78 +80,48 @@ bool MeshNode::init()
 		return false;
 	}
 	setContentSize(Size(SIZE_X, SIZE_Y));
-	setAnchorPoint(Vec2(0.5f, 0.5f));
-	
-
-	auto cache = Director::getInstance()->getTextureCache();
-
-	std::string fullPath = FileUtils::getInstance()->fullPathForFilename("1.c3t");
-
-	//MeshDatas* meshdatas = new (std::nothrow) MeshDatas();
-	//MaterialDatas* materialdatas = new (std::nothrow) MaterialDatas();
-	//NodeDatas* nodeDatas = new (std::nothrow) NodeDatas();
-	//auto bundle = Bundle3D::createBundle();
-	//if (!bundle->load(fullPath))
-	//{
-	//	Bundle3D::destroyBundle(bundle);
-	//	return false;
-	//}
-	//bundle->loadMeshDatas(*meshdatas);
-	//bundle->loadMaterials(*materialdatas);
-	//bundle->loadNodes(*nodeDatas);
-	//Bundle3D::destroyBundle(bundle);
-
-	//auto VertexData = MeshVertexData::create(*(meshdatas->meshDatas.front()));
-	//NodeData *nodedata = nodeDatas->nodes.front()->children.front();
-	//_meshIndexData =  VertexData->getMeshIndexDataById(nodedata->modelNodeDatas.front()->subMeshId);
-
-	//_meshIndexData->retain();
-	//VertexData->retain();
+	setAnchorPoint(Vec2(0.0f, 0.0f));
 
 	_stateBlock = RenderState::StateBlock::create();
 	_stateBlock->setBlend(false);
 	_stateBlock->setCullFace(false);
-	_stateBlock->setDepthTest(true);
-	_stateBlock->setDepthFunction(RenderState::DEPTH_GREATER);
+	_stateBlock->setDepthTest(true); //必须同时设置setDepthWrite(true)，才能进行深度比较
+	_stateBlock->setDepthWrite(true);
 	_stateBlock->retain();
 
-
-	V3F_C4B_T2F data[] = {
-		{ { 0,    0,0 },{ 255,  0,  0,255 },{ 0,1 } },
-		{ { 200,  0,0 },{ 0,  255,255,255 },{ 1,1 } },
-		{ { 200,200,0 },{ 255,255,  0,255 },{ 1,0 } },
-		{ { 0,  200,0 },{ 255,255,255,255 },{ 0,0 } },
-	};
-
-	uint32_t indices[] = {
-		0,1,2,
-		2,0,3
-	};
-
-	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0]);
-	static const int TOTAL_INDICES = TOTAL_VERTS * 6 / 4;
-
-	float data2[] = {
+	//这是一个正方体,数据来自3D模型Resources\3DCube\cube1.c3t，位置：3个float, 法线：3个float
+	float data[] = {
+		//背面 
 		120.787605,  119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
 		-120.787605, -119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
 		-120.787605,  119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
 		120.787605, -119.807968, -119.807968,  0.000000,  0.000000, -1.000000,
+
+		//正面
 		-120.787605,  119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
 		120.787605, -119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
 		120.787605,  119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
 		-120.787605, -119.807968,  119.807968,  0.000000,  0.000000,  1.000000,
+
+		//右面
 		120.787605,  119.807968,  119.807968,  1.000000,  0.000000,  0.000000,
 		120.787605, -119.807968, -119.807968,  1.000000,  0.000000,  0.000000,
 		120.787605,  119.807968, -119.807968,  1.000000,  0.000000,  0.000000,
 		120.787605, -119.807968,  119.807968,  1.000000,  0.000000,  0.000000,
+
+		//左面
 		-120.787605,  119.807968, -119.807968, -1.000000,  0.000000,  0.000000,
 		-120.787605, -119.807968,  119.807968, -1.000000,  0.000000,  0.000000,
 		-120.787605,  119.807968,  119.807968, -1.000000,  0.000000,  0.000000,
 		-120.787605, -119.807968, -119.807968, -1.000000,  0.000000,  0.000000,
+
+		//上面
 		-120.787605,  119.807968, -119.807968,  0.000000,  1.000000,  0.000000,
 		120.787605,  119.807968,  119.807968,  0.000000,  1.000000,  0.000000,
 		120.787605,  119.807968, -119.807968,  0.000000,  1.000000,  0.000000,
 		-120.787605,  119.807968,  119.807968,  0.000000,  1.000000,  0.000000,
+
+		//下面
 		-120.787605, -119.807968,  119.807968,  0.000000, -1.000000,  0.000000,
 		120.787605, -119.807968, -119.807968,  0.000000, -1.000000,  0.000000,
 		120.787605, -119.807968,  119.807968,  0.000000, -1.000000,  0.000000,
@@ -157,17 +134,16 @@ bool MeshNode::init()
 		16,  17,  18,  16,  19,  17,  20,  21,  22,  20,  23,  21
 	};
 
-	static const int TOTAL_VERTS2 = sizeof(data2) / sizeof(data2[0])/6;
-	static const int TOTAL_INDICES2 = sizeof(indices2) / sizeof(indices2[0]);
+	static const int TOTAL_VERTS = sizeof(data) / sizeof(data[0])/6;
+	static const int TOTAL_INDICES = sizeof(indices2) / sizeof(indices2[0]);
 
-	vertexBuffer = VertexBuffer::create(sizeof(float)*6, TOTAL_VERTS2);
-	vertexBuffer->updateVertices(data2, TOTAL_VERTS2, 0);
-	vertexBuffer->retain();
+	_vertexBuffer = VertexBuffer::create(sizeof(float)*6, TOTAL_VERTS);
+	_vertexBuffer->updateVertices(data, TOTAL_VERTS, 0);
+	_vertexBuffer->retain();
 
-	indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_UINT_32, TOTAL_INDICES2);
-	indexBuffer->updateIndices(indices2, TOTAL_INDICES2, 0);
-	indexBuffer->retain();
-
+	_indexBuffer = IndexBuffer::create(IndexBuffer::IndexType::INDEX_TYPE_UINT_32, TOTAL_INDICES);
+	_indexBuffer->updateIndices(indices2, TOTAL_INDICES, 0);
+	_indexBuffer->retain();
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
@@ -177,13 +153,16 @@ bool MeshNode::init()
 	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
 	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
 
-	//setGLProgramState(GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_3D_POSITION_NORMAL_TEXTURE));
 	return true;
 }
 
+//#define DRAW_LINE
 
-cocos2d::CustomCommand _beforeCommand;
-cocos2d::CustomCommand _afterCommand;
+#ifdef DRAW_LINE
+static CustomCommand beforeCommand;
+static CustomCommand afterCommand;
+#endif // DRAW_LINE
+
 
 void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
@@ -193,19 +172,21 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 	if (!isVisible())
 		return;
 
-	_beforeCommand.init(-1);
-	_beforeCommand.func = []() { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); };
-	renderer->addCommand(&_beforeCommand);
+#ifdef DRAW_LINE
+	beforeCommand.init(-1);
+	beforeCommand.func = []() { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); };
+	renderer->addCommand(&beforeCommand);
+#endif
 
 	_meshCommand.init(getGlobalZOrder(),
 		0,
 		glProgramState,
 		_stateBlock,
-		vertexBuffer->getVBO(),
-		indexBuffer->getVBO(),
+		_vertexBuffer->getVBO(),
+		_indexBuffer->getVBO(),
 		GL_TRIANGLES,
 		GL_UNSIGNED_INT,
-		indexBuffer->getIndexNumber(),
+		_indexBuffer->getIndexNumber(),
 		transform,
 		flags);
 
@@ -215,10 +196,11 @@ void MeshNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform,
 
 	renderer->addCommand(&_meshCommand);
 
-	_afterCommand.init(1);
-	_afterCommand.func = []() {glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); };
-	renderer->addCommand(&_afterCommand);
-
+#ifdef DRAW_LINE
+	afterCommand.init(1);
+	afterCommand.func = []() {glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); };
+	renderer->addCommand(&afterCommand);
+#endif
 
 }
 
@@ -298,8 +280,13 @@ bool MeshScene::init()
 	//this->addChild(sp);
 
 	auto meshNode = MeshNode::create();
-	meshNode->setPosition(500,350);
-	//meshNode->setScale(10);
+	meshNode->setPosition(visibleSize/2);
+	meshNode->setScale(0.8);
+
+	auto r = RotateBy::create(5, Vec3(360, 90, 180));
+	auto action = RepeatForever::create(r);
+	meshNode->runAction(action);
+
 	this->addChild(meshNode);
 
     return true;
