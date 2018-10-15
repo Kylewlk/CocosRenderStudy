@@ -260,12 +260,6 @@ bool MeshScene::init()
     /////////////////////////////
     // 3. add your codes below...
 
-    // add a label shows "Hello World"
-    // create and initialize a label
-	//auto node = MeshNode::create();
-	//this->addChild(node);
-	//node->setPosition(Vec2(node->getContentSize().width,visibleSize.height/2));
-
 	//auto sp = Sprite3D::create("orc.c3t");
 	//sp->setScale(10, 10);
 	//sp->setRotation3D(Vec3(0, 180, 0));

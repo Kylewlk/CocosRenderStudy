@@ -22,42 +22,30 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "GroupScene.h"
+#include "TrianglesScene.h"
+
+#pragma warning(disable:4838)
+#pragma warning(disable:4305)
 
 USING_NS_CC;
 
-const float SIZE_X = 280;
-const float SIZE_Y = 280;
+const float SIZE_X = 200;
+const float SIZE_Y = 200;
 
-
-static const char* ccPositionTextureColor_frag2 = R"(
-#ifdef GL_ES
-precision lowp float;
-#endif
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-void main()
+TrianglesNode::TrianglesNode()
+	:_texture{nullptr, nullptr}
 {
-	vec4 tc = texture2D(CC_Texture0, v_texCoord);	
-	gl_FragColor = mix (v_fragmentColor , tc, tc.w);
-}
-)";
-
-GroupNode::GroupNode()
-	:_textureAtlas(nullptr)
-{
-	_vertShader = ccPositionTextureColor_vert;
-	_fragShader = ccPositionTextureColor_frag2;
+	_vertShader = ccPositionTextureColor_noMVP_vert;
+	_fragShader = ccPositionTextureColor_noMVP_frag;
 }
 
-GroupNode::~GroupNode()
+TrianglesNode::~TrianglesNode()
 {
-	CC_SAFE_RELEASE(_textureAtlas);
+	CC_SAFE_RELEASE(_texture[0]);
+	CC_SAFE_RELEASE(_texture[1]);
 }
 
-bool GroupNode::init()
+bool TrianglesNode::init()
 {
 	if (!Node::init())
 	{
@@ -66,100 +54,35 @@ bool GroupNode::init()
 	setContentSize(Size(SIZE_X, SIZE_Y));
 	setAnchorPoint(Vec2(0.5f, 0.5f));
 
-	auto draw = DrawNode::create();
-	draw->drawRect(Vec2(0, 0), Size(SIZE_X, SIZE_Y), Color4F(0.0f, 0.0f, 1.0f, 1.0f));
-	this->addChild(draw, 10);
-
-	auto cache = Director::getInstance()->getTextureCache();
-	auto tex = cache->addImage("Man.png");
-
-	_textureAtlas = TextureAtlas::createWithTexture(tex, 30);
-	
-	float w = tex->getPixelsWide()*2;
-	float h = tex->getPixelsHigh()*2;
-
-	cocos2d::V3F_C4B_T2F_Quad quad = {
-		{ { 0,      h, 0 },{ 255, 255, 255, 255 },{ 0,  0 } },
-		{ { 0,      0, 0 },{ 255, 255, 255, 255 },{ 0,  1 } },
-		{ { w*0.5f, h, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
-		{ { w*0.5f, 0, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
-	};
 
 
-	cocos2d::V3F_C4B_T2F_Quad quad2 = {
-		{ { w*0.5f + 20, h, 0 },{ 255, 255, 255, 255 },{ 0.5,1 } },
-		{ { w*0.5f + 20, 0, 0 },{ 255, 255, 255, 255 },{ 0.5,0 } },
-		{ { w + 20,      h, 0 },{ 255, 255, 255, 255 },{ 1,  1 } },
-		{ { w + 20,      0, 0 },{ 255, 255, 255, 255 },{ 1,  0 } },
-	};
 
-	_textureAtlas->insertQuad(&quad, 0);
-	_textureAtlas->insertQuad(&quad2, 1);
-	_textureAtlas->retain();
 
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
 	setGLProgramState(glprogramstate);
+
+	GLsizei stride = sizeof(float) * 6;
+	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
+	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
+
 	return true;
 }
 
-void GroupNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
+void TrianglesNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& transform, uint32_t flags)
 {
-
-	// Optimization: Fast Dispatch
-	if (_textureAtlas->getTotalQuads() == 0)
-	{
-		return;
-	}
-	_groupCommand.init(_globalZOrder);
-	renderer->addCommand(&_groupCommand);
-
-	renderer->pushGroup(_groupCommand.getRenderQueueID());
 
 	auto glProgramState = getGLProgramState();
 
-	_beforeCommand.init(-1);
-	_beforeCommand.func = CC_CALLBACK_0(GroupNode::BeforeDraw, this, transform, this->getPositionZ());
-	renderer->addCommand(&_beforeCommand);
-
-	_batchCommand.init(0, 
-		getGLProgram(),
-		BlendFunc::ALPHA_NON_PREMULTIPLIED,
-		 _textureAtlas,
-		transform,
-		flags);
-	renderer->addCommand(&_batchCommand);
-
-	_afterCommand.init(1);
-	_afterCommand.func = CC_CALLBACK_0(GroupNode::AfterDraw, this);
-	renderer->addCommand(&_afterCommand);
-
-	renderer->popGroup();
-}
-
-void GroupNode::BeforeDraw(Mat4 &transform, float z)
-{
-	glGetIntegerv(GL_SCISSOR_BOX, _scissorBox);
-
-	Vec3 orgin(0, 0, z);
-	transform.transformPoint(&orgin);
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(orgin.x, orgin.y, SIZE_X, SIZE_Y);
+	if (!isVisible())
+		return;
 
 }
 
-void GroupNode::AfterDraw()
+Scene* TrianglesScene::createScene()
 {
-	glScissor(_scissorBox[0], _scissorBox[1], _scissorBox[2], _scissorBox[3]);
-	glDisable(GL_SCISSOR_TEST);
-}
-
-
-
-Scene* GroupScene::createScene()
-{
-    return GroupScene::create();
+    return TrianglesScene::create();
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -170,7 +93,7 @@ static void problemLoading(const char* filename)
 }
 
 // on "init" you need to initialize your instance
-bool GroupScene::init()
+bool TrianglesScene::init()
 {
     //////////////////////////////
     // 1. super init first
@@ -190,7 +113,7 @@ bool GroupScene::init()
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
-                                           CC_CALLBACK_1(GroupScene::menuCloseCallback, this));
+                                           CC_CALLBACK_1(TrianglesScene::menuCloseCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -213,17 +136,16 @@ bool GroupScene::init()
     /////////////////////////////
     // 3. add your codes below...
 
-    // add a label shows "Hello World"
-    // create and initialize a label
-	auto node = GroupNode::create();
-	node->setPosition(visibleSize / 2);
-	this->addChild(node);
+	auto sp = Sprite::create("man.png");
+	sp->setPosition(visibleSize / 2);
+	this->addChild(sp);
+
 
     return true;
 }
 
 
-void GroupScene::menuCloseCallback(Ref* pSender)
+void TrianglesScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
     Director::getInstance()->end();

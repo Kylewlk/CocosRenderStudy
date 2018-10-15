@@ -56,7 +56,7 @@ void main()
 )";
 
 PrimitiveNode::PrimitiveNode()
-	:_texture(0)
+	:_texture(nullptr)
 {
 	_vertShader = ccPositionTextureColor_vert;
 	_fragShader = ccPositionTextureColor_frag2;
@@ -65,12 +65,13 @@ PrimitiveNode::PrimitiveNode()
 PrimitiveNode::~PrimitiveNode()
 {
 	CC_SAFE_RELEASE(_primitive);
+	CC_SAFE_RELEASE(_texture);
 }
 
 void PrimitiveNode::setTexture(cocos2d::Texture2D * texture)
 {
 	_texture = texture;
-	_texture->retain();
+	CC_SAFE_RETAIN(_texture);
 }
 
 bool PrimitiveNode::init()

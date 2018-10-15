@@ -29,6 +29,7 @@
 #include "BatchScene.h"
 #include "GroupScene.h"
 #include "MeshScene.h"
+#include "TrianglesScene.h"
 
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
@@ -112,7 +113,8 @@ bool AppDelegate::applicationDidFinishLaunching() {
 	//auto scene = PrimitiveScene::createScene();
 	//auto scene = BatchScene::createScene();
 	//auto scene = GroupScene::createScene();
-	auto scene = MeshScene::createScene();
+	//auto scene = MeshScene::createScene();
+	auto scene = TrianglesScene::createScene();
 
     // run
     director->runWithScene(scene);

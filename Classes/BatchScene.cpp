@@ -46,6 +46,7 @@ void main()
 )";
 
 BatchNode::BatchNode()
+	:_textureAtlas(nullptr)
 {
 	_vertShader = ccPositionTextureColor_vert;
 	_fragShader = ccPositionTextureColor_frag2;
@@ -53,6 +54,7 @@ BatchNode::BatchNode()
 
 BatchNode::~BatchNode()
 {
+	CC_SAFE_RELEASE(_textureAtlas);
 }
 
 void BatchNode::setTexture(cocos2d::Texture2D * texture)
