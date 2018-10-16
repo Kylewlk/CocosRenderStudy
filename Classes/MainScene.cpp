@@ -22,25 +22,31 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#include "HelloWorldScene.h"
+#include "MainScene.h"
 #include "SimpleAudioEngine.h"
+#include "CustomScene.h"
+#include "PrimitiveScene.h"
+#include "BatchScene.h"
+#include "GroupScene.h"
+#include "MeshScene.h"
+#include "TrianglesScene.h"
 
 USING_NS_CC;
 
-Scene* HelloWorld::createScene()
+Scene* MainScene::createScene()
 {
-    return HelloWorld::create();
+    return MainScene::create();
 }
 
 // Print useful error message instead of segfaulting when files are not there.
 static void problemLoading(const char* filename)
 {
     printf("Error while loading: %s\n", filename);
-    printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in HelloWorldScene.cpp\n");
+    printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in MainScene.cpp\n");
 }
 
 // on "init" you need to initialize your instance
-bool HelloWorld::init()
+bool MainScene::init()
 {
     //////////////////////////////
     // 1. super init first
@@ -60,7 +66,7 @@ bool HelloWorld::init()
     auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
-                                           CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
+                                           CC_CALLBACK_1(MainScene::menuCloseCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -76,50 +82,62 @@ bool HelloWorld::init()
     }
 
     // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, NULL);
-    menu->setPosition(Vec2::ZERO);
-    this->addChild(menu, 1);
+    auto menuExit = Menu::create(closeItem, NULL);
+    menuExit->setPosition(Vec2::ZERO);
+    this->addChild(menuExit, 1);
 
     /////////////////////////////
     // 3. add your codes below...
 
     // add a label shows "Hello World"
     // create and initialize a label
+	auto menu = Menu::create();
 
-    auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
-    if (label == nullptr)
-    {
-        problemLoading("'fonts/Marker Felt.ttf'");
-    }
-    else
-    {
-        // position the label on the center of the screen
-        label->setPosition(Vec2(origin.x + visibleSize.width/2,
-                                origin.y + visibleSize.height - label->getContentSize().height));
+	auto customItem = MenuItemFont::create("Custom Command", [](Ref *sender) {
+		auto scene = CustomScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(customItem);
 
-        // add the label as a child to this layer
-        this->addChild(label, 1);
-    }
+	auto primitiveItem = MenuItemFont::create("Primitive Command", [](Ref *sender) {
+		auto scene = PrimitiveScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(primitiveItem);
 
-    // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("HelloWorld.png");
-    if (sprite == nullptr)
-    {
-        problemLoading("'HelloWorld.png'");
-    }
-    else
-    {
-        // position the sprite on the center of the screen
-        sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
+	auto batchItem = MenuItemFont::create("Batch Command", [](Ref *sender) {
+		auto scene = BatchScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(batchItem);
 
-        // add the sprite as a child to this layer
-        this->addChild(sprite, 0);
-    }
-    return true;
+	auto groupItem = MenuItemFont::create("Group Command", [](Ref *sender) {
+		auto scene = GroupScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(groupItem);
+
+	auto meshItem = MenuItemFont::create("Mesh Command", [](Ref *sender) {
+		auto scene = MeshScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(meshItem);
+
+	auto trianglesItem = MenuItemFont::create("Triangles Command", [](Ref *sender) {
+		auto scene = TrianglesScene::create();
+		Director::getInstance()->pushScene(scene);
+	});
+	menu->addChild(trianglesItem);
+
+	menu->alignItemsVerticallyWithPadding(20);
+	this->addChild(menu);
+	menu->setPosition(visibleSize / 2);
+	
+	return true;
 }
 
 
-void HelloWorld::menuCloseCallback(Ref* pSender)
+void MainScene::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
     Director::getInstance()->end();

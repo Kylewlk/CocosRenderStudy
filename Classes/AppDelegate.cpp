@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include "AppDelegate.h"
-#include "HelloWorldScene.h"
+#include "MainScene.h"
 #include "CustomScene.h"
 #include "PrimitiveScene.h"
 #include "BatchScene.h"
@@ -108,13 +108,13 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
 
     // create a scene. it's an autorelease object
-    //auto scene = HelloWorld::createScene();
+    auto scene = MainScene::createScene();
 	//auto scene = CustomScene::createScene();
 	//auto scene = PrimitiveScene::createScene();
 	//auto scene = BatchScene::createScene();
 	//auto scene = GroupScene::createScene();
 	//auto scene = MeshScene::createScene();
-	auto scene = TrianglesScene::createScene();
+	//auto scene = TrianglesScene::createScene();
 
     // run
     director->runWithScene(scene);

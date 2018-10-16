@@ -109,15 +109,17 @@ void TrianglesNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& trans
 
 	if (!isVisible())
 		return;
-
-	for (int i = 0; i < 3; ++i)
+	//这两个TrianglesCommand 使用了同一个纹理，最终会合成一个DrawCall
+	for (int i = 0; i < 2; ++i)
 	{
-		_trianglesCommand[i].init(_globalZOrder, _texture[i/2], glProgramState,
+		_trianglesCommand[i].init(_globalZOrder, _texture[0], glProgramState,
 			BlendFunc::ALPHA_PREMULTIPLIED, _triangles[i], transform, flags);
 		renderer->addCommand(_trianglesCommand + i);
 	}
 
-
+	_trianglesCommand[2].init(_globalZOrder, _texture[1], glProgramState,
+		BlendFunc::ALPHA_PREMULTIPLIED, _triangles[2], transform, flags);
+	renderer->addCommand(_trianglesCommand + 2);
 
 }
 
@@ -146,15 +148,7 @@ bool TrianglesScene::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    /////////////////////////////
-    // 2. add a menu item with "X" image, which is clicked to quit the program
-    //    you may modify it.
-
-    // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create(
-                                           "CloseNormal.png",
-                                           "CloseSelected.png",
-                                           CC_CALLBACK_1(TrianglesScene::menuCloseCallback, this));
+	auto closeItem = MenuItemFont::create("Back", CC_CALLBACK_1(TrianglesScene::menuBackCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -172,7 +166,7 @@ bool TrianglesScene::init()
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
     menu->setPosition(Vec2::ZERO);
-    //this->addChild(menu, 1);
+    this->addChild(menu, 1);
 
     /////////////////////////////
     // 3. add your codes below...
@@ -187,20 +181,7 @@ bool TrianglesScene::init()
     return true;
 }
 
-
-void TrianglesScene::menuCloseCallback(Ref* pSender)
+void TrianglesScene::menuBackCallback(Ref* pSender)
 {
-    //Close the cocos2d-x game scene and quit the application
-    Director::getInstance()->end();
-
-    #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-    exit(0);
-#endif
-
-    /*To navigate back to native iOS screen(if present) without quitting the application  ,do not use Director::getInstance()->end() and exit(0) as given above,instead trigger a custom event created in RootViewController.mm as below*/
-
-    //EventCustom customEndEvent("game_scene_close_event");
-    //_eventDispatcher->dispatchEvent(&customEndEvent);
-
-
+	Director::getInstance()->popScene();
 }

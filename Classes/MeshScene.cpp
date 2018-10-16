@@ -53,7 +53,8 @@ varying vec3 v_normal;
 
 void main()
 {
-	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0) *(0.1 + 0.6*max(v_normal.z, 0)) + vec4(1.0) * pow(max(v_normal.z, 0), 70)*0.2;
+	gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0) 
+                   * (0.1 + 0.6*max(v_normal.z, 0)) + vec4(1.0) * pow(max(v_normal.z, 0), 70)*0.2;//增加一个眼睛和光都为z轴正方向的光照，使得模型有立体感
 }
 )";
 
@@ -233,11 +234,7 @@ bool MeshScene::init()
     // 2. add a menu item with "X" image, which is clicked to quit the program
     //    you may modify it.
 
-    // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create(
-                                           "CloseNormal.png",
-                                           "CloseSelected.png",
-                                           CC_CALLBACK_1(MeshScene::menuCloseCallback, this));
+	auto closeItem = MenuItemFont::create("Back", CC_CALLBACK_1(MeshScene::menuBackCallback, this));
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -255,7 +252,7 @@ bool MeshScene::init()
     // create menu, it's an autorelease object
     auto menu = Menu::create(closeItem, NULL);
     menu->setPosition(Vec2::ZERO);
-    //this->addChild(menu, 1);
+    this->addChild(menu, 1);
 
     /////////////////////////////
     // 3. add your codes below...
@@ -286,20 +283,7 @@ bool MeshScene::init()
     return true;
 }
 
-
-void MeshScene::menuCloseCallback(Ref* pSender)
+void MeshScene::menuBackCallback(Ref* pSender)
 {
-    //Close the cocos2d-x game scene and quit the application
-    Director::getInstance()->end();
-
-    #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-    exit(0);
-#endif
-
-    /*To navigate back to native iOS screen(if present) without quitting the application  ,do not use Director::getInstance()->end() and exit(0) as given above,instead trigger a custom event created in RootViewController.mm as below*/
-
-    //EventCustom customEndEvent("game_scene_close_event");
-    //_eventDispatcher->dispatchEvent(&customEndEvent);
-
-
+	Director::getInstance()->popScene();
 }

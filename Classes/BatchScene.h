@@ -61,7 +61,7 @@ public:
     virtual bool init();
     
     // a selector callback
-    void menuCloseCallback(cocos2d::Ref* pSender);
+    void menuBackCallback(cocos2d::Ref* pSender);
     
     // implement the "static create()" method manually
     CREATE_FUNC(BatchScene);
