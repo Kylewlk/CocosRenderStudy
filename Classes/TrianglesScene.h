@@ -46,7 +46,7 @@ protected:
 	cocos2d::Texture2D* _texture[2];
 
 	cocos2d::TrianglesCommand::Triangles _triangles[3];
-	cocos2d::TrianglesCommand _TrianglesCommand[3];
+	cocos2d::TrianglesCommand _trianglesCommand[3];
 private:
 
 };

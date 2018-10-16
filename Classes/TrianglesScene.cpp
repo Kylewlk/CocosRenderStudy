@@ -29,9 +29,6 @@
 
 USING_NS_CC;
 
-const float SIZE_X = 200;
-const float SIZE_Y = 200;
-
 TrianglesNode::TrianglesNode()
 	:_texture{nullptr, nullptr}
 {
@@ -51,22 +48,57 @@ bool TrianglesNode::init()
 	{
 		return false;
 	}
-	setContentSize(Size(SIZE_X, SIZE_Y));
+	setContentSize(Size(0, 300));
 	setAnchorPoint(Vec2(0.5f, 0.5f));
 
+	auto cache = Director::getInstance()->getTextureCache();
+	_texture[0] = cache->addImage("HelloWorld.png");
+	_texture[0]->retain();
+	_texture[1] = cache->addImage("Man.png");
+	_texture[1]->retain();
 
+	float w = 200;
+	float h = 300;
 
+	const static cocos2d::V3F_C4B_T2F_Quad quad = {
+		{ { 0,  0, 0 },{ 255, 255, 255, 255 },{ 0,1 } },
+		{ { 0,  h, 0 },{ 255, 255, 255, 255 },{ 0,0 } },
+		{ { w,  h, 0 },{ 255, 255, 255, 255 },{ 1,0 } },
+	};
 
+	const static cocos2d::V3F_C4B_T2F_Quad quad1 = {
+		{ { 20 + 0,  0, 0 },{ 255, 255, 255, 255 },{ 0,1 } },
+		{ { 20 + w,  h, 0 },{ 255, 255, 255, 255 },{ 1,0 } },
+		{ { 20 + w,  0, 0 },{ 255, 255, 255, 255 },{ 1,1 } },
+	};
 
+	const static cocos2d::V3F_C4B_T2F_Quad quad2 = {
+		{ { w + 40 + 0,    0, 0 },{ 255, 255, 255, 255 },{ 0,1 } },
+		{ { w + 40 + 0,    300, 0 },{ 255, 255, 255, 255 },{ 0,0 } },
+		{ { w + 40 + 400,  300, 0 },{ 255, 255, 255, 255 },{ 1,0 } },
+		{ { w + 40 + 400,  0, 0 },{ 255, 255, 255, 255 },{ 1,1 } },
+	};
+
+	static uint16_t indices[] = { 0,1,2, 2,0,3 };
+
+	_triangles[0].indexCount = 3;
+	_triangles[0].indices = indices;
+	_triangles[0].vertCount = 4;
+	_triangles[0].verts = (V3F_C4B_T2F*)&quad;
+
+	_triangles[1].indexCount = 3;
+	_triangles[1].indices = indices;
+	_triangles[1].vertCount = 4;
+	_triangles[1].verts = (V3F_C4B_T2F*)&quad1;
+
+	_triangles[2].indexCount = 6;
+	_triangles[2].indices = indices;
+	_triangles[2].vertCount = 4;
+	_triangles[2].verts = (V3F_C4B_T2F*)&quad2;
 
 	auto glprogram = GLProgram::createWithByteArrays(_vertShader.c_str(), _fragShader.c_str());
 	auto glprogramstate = GLProgramState::getOrCreateWithGLProgram(glprogram);
 	setGLProgramState(glprogramstate);
-
-	GLsizei stride = sizeof(float) * 6;
-	glprogramstate->setVertexAttribPointer("a_position", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0);
-	glprogramstate->setVertexAttribPointer("a_normal", 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(sizeof(float)*3));
-
 	return true;
 }
 
@@ -77,6 +109,15 @@ void TrianglesNode::draw(cocos2d::Renderer* renderer, const cocos2d::Mat4& trans
 
 	if (!isVisible())
 		return;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		_trianglesCommand[i].init(_globalZOrder, _texture[i/2], glProgramState,
+			BlendFunc::ALPHA_PREMULTIPLIED, _triangles[i], transform, flags);
+		renderer->addCommand(_trianglesCommand + i);
+	}
+
+
 
 }
 
@@ -135,11 +176,13 @@ bool TrianglesScene::init()
 
     /////////////////////////////
     // 3. add your codes below...
+	//auto sp = Sprite::create("man.png");
+	//sp->setPosition(visibleSize / 2);
+	//this->addChild(sp);
 
-	auto sp = Sprite::create("man.png");
-	sp->setPosition(visibleSize / 2);
-	this->addChild(sp);
-
+	auto node = TrianglesNode::create();
+	node->setPosition(50, visibleSize.height / 2);
+	this->addChild(node);
 
     return true;
 }
